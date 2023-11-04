@@ -26,6 +26,7 @@ int main(int argc, char** argv)
 	SDL_Texture* backgroundTexture = SDL_CreateTextureFromSurface(renderer, tmpSurface);
 	tmpSurface = IMG_Load("assets/green.png");
 	SDL_Texture* sample1Texture = SDL_CreateTextureFromSurface(renderer, tmpSurface);
+	tmpSurface = IMG_Load("assets/orenge.png");
 	SDL_Texture* sample2Texture = SDL_CreateTextureFromSurface(renderer, tmpSurface);
 	tmpSurface = IMG_Load("assets/purple.png");
 	SDL_Texture* sample3Texture = SDL_CreateTextureFromSurface(renderer, tmpSurface);
@@ -41,8 +42,8 @@ int main(int argc, char** argv)
 	SDL_Rect* arrRect = (SDL_Rect*)malloc(sizeof(SDL_Rect) * 100);
 	for (int i = 0; i < 100; i++)
 	{
-		arrayRect[i].x = 0;
-		arrayRect[i].y = 0;
+		arrayRect[i].x = rand() % (window_w - 10);
+		arrayRect[i].y = rand() % (window_h - 10);
 		arrayRect[i].w = 10;
 		arrayRect[i].h = 10;
 	}
@@ -71,8 +72,8 @@ int main(int argc, char** argv)
 		sample2Rect.y += 5;
 		for (int i = 0; i < 100; i++)
 		{
-			arrayRect[i].x = rand() % (window_w-100);
-			arrayRect[i].y = rand() % (window_h-100);
+			arrayRect[i].x += rand() % 5 - 2;
+			arrayRect[i].y += rand() % 5 - 2;
 		}
 
 		// Render
