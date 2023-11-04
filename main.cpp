@@ -3,6 +3,10 @@
 #include <stdio.h>
 #include <random>
 
+#define MAX_ENTITIES 100
+
+bool CheckCollision(SDL_Rect* p1, SDL_Rect* p2);
+
 int main(int argc, char** argv)
 {
 	int window_w = 1460;
@@ -36,19 +40,29 @@ int main(int argc, char** argv)
 
 	// Rectangle
 	SDL_Rect backgroundRect{0,0,window_w,window_h};
-	SDL_Rect sample1Rect{0,0,100,100};
-	SDL_Rect sample2Rect{1360,0,100,100};
-	SDL_Rect arrayRect[100];
-	SDL_Rect* arrRect = (SDL_Rect*)malloc(sizeof(SDL_Rect) * 100);
-	for (int i = 0; i < 100; i++)
+	SDL_Rect arrayRect[MAX_ENTITIES]{};
+
+	bool bOnScreen[MAX_ENTITIES]{};
+	for (int i = 0; i < MAX_ENTITIES; i++)
 	{
-		arrayRect[i].x = rand() % (window_w - 10);
-		arrayRect[i].y = rand() % (window_h - 10);
+		bOnScreen[i] = true;
+	}
+
+	int nPad = 300;
+	for (int i = 0; i < MAX_ENTITIES; i++)
+	{
+		arrayRect[i].x = rand() % (window_w - 2*nPad) + nPad;
+		arrayRect[i].y = rand() % (window_h - 2*nPad) + nPad;
 		arrayRect[i].w = 10;
 		arrayRect[i].h = 10;
 	}
 	// End of Rectangle
 
+	// dummy variables
+	int nCount = 0;
+	int nSpeed = 21;
+
+	// Main Loop
 	while (isRunning)
 	{
 		// Get Ticks
@@ -61,29 +75,62 @@ int main(int argc, char** argv)
 		case SDL_QUIT:
 			isRunning = false;
 			break;
-		default:
-			break;
+
+		/* Keyboard event */
+		case SDL_KEYDOWN:
+			switch (event.key.keysym.sym)
+			{
+			case SDLK_ESCAPE:
+				isRunning = false;
+				break;
+			}
+		case SDL_KEYUP:
+			switch (event.key.keysym.sym)
+			{
+			case SDLK_ESCAPE:
+				break;
+			}
 		}
 
 		// Update
-		sample1Rect.x += 5;
-		sample1Rect.y += 5;
-		sample2Rect.x -= 5;
-		sample2Rect.y += 5;
-		for (int i = 0; i < 100; i++)
+		for (int i = 0; i < MAX_ENTITIES; i++)
 		{
-			arrayRect[i].x += rand() % 5 - 2;
-			arrayRect[i].y += rand() % 5 - 2;
+			if (bOnScreen[i])
+			{
+				arrayRect[i].x += rand() % nSpeed - nSpeed/2;
+				arrayRect[i].y += rand() % nSpeed - nSpeed / 2;
+			}
+		}
+		for (int i = 0; i < MAX_ENTITIES; i++)
+		{
+			if (bOnScreen[i])
+			{
+				for (int j = 0; j < MAX_ENTITIES; j++)
+				{
+					if (bOnScreen[j])
+					{
+						if (i != j && CheckCollision(&arrayRect[i], &arrayRect[j]))
+						{
+							bOnScreen[i] = false;
+							bOnScreen[j] = false;
+							nCount++;
+							printf("%d Collision %d and %d\n", nCount, i, j);
+							break;
+						}
+					}
+				}
+			}
 		}
 
 		// Render
 		SDL_RenderClear(renderer);
 		SDL_RenderCopy(renderer, backgroundTexture, NULL, &backgroundRect);
-		SDL_RenderCopy(renderer, sample1Texture, NULL, &sample1Rect);
-		SDL_RenderCopy(renderer, sample2Texture, NULL, &sample2Rect);
-		for (int i = 0; i < 100; i++)
+		for (int i = 0; i < MAX_ENTITIES; i++)
 		{
-			SDL_RenderCopy(renderer, sample3Texture, NULL, &arrayRect[i]);
+			if (bOnScreen[i])
+			{
+				SDL_RenderCopy(renderer, sample3Texture, NULL, &arrayRect[i]);
+			}
 		}
 		SDL_RenderPresent(renderer);
 
@@ -95,7 +142,7 @@ int main(int argc, char** argv)
 		}
 		if (frameTime > 0)
 		{
-			printf("FPS : %d\n", (int)(1/(((Uint32)SDL_GetTicks64() - frameStart) / 1000.f)));
+			//printf("FPS : %d\n", (int)(1/(((Uint32)SDL_GetTicks64() - frameStart) / 1000.f)));
 		}
 	}
 
@@ -105,4 +152,16 @@ int main(int argc, char** argv)
 	SDL_Quit();
 	
 	return 0;
+}
+
+bool CheckCollision(SDL_Rect* p1, SDL_Rect* p2)
+{
+	if (p1->x < p2->x && p1->x + p1->w > p2->x && p1->y < p2->y && p1->y + p1->h > p2->y)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
 }
