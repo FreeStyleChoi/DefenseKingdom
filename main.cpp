@@ -105,11 +105,11 @@ int main(int argc, char** argv)
 		{
 			if (bOnScreen[i])
 			{
-				for (int j = 0; j < MAX_ENTITIES; j++)
+				for (int j = 0; j < i; j++)
 				{
 					if (bOnScreen[j])
 					{
-						if (i != j && CheckCollision(&arrayRect[i], &arrayRect[j]))
+						if (CheckCollision(&arrayRect[i], &arrayRect[j]))
 						{
 							bOnScreen[i] = false;
 							bOnScreen[j] = false;
