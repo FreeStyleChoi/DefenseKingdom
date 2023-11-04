@@ -17,6 +17,18 @@ int main(int argc, char** argv)
 		SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 	}
 
+
+	SDL_Surface* tmpSurface;
+
+
+	tmpSurface = IMG_Load("assets/Blue.png");
+	SDL_Texture* BlueTex = SDL_CreateTextureFromSurface(renderer, tmpSurface);
+	SDL_FreeSurface(tmpSurface);
+
+	SDL_Rect BlueRect{};
+	BlueRect.w = 64;
+
+
 	bool isRunning = true;
 	SDL_Event event;
 
