@@ -23,8 +23,8 @@ int main(int argc, char** argv)
 	SDL_Init(SDL_INIT_EVERYTHING);
 	SDL_Window* window = SDL_CreateWindow(
 		"Defense Kingdom", 
-		0, 
-		0, 
+		SDL_WINDOWPOS_CENTERED,
+		SDL_WINDOWPOS_CENTERED,
 		window_w, window_h, false);
 	SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, 0);
 
