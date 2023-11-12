@@ -10,6 +10,7 @@
 bool CheckCollision(SDL_Rect* p1, SDL_Rect* p2);
 float GetDistance(SDL_Rect* p1, SDL_Rect* p2);
 float GetDistance(int x, int y);
+int GenTower(SDL_Rect (&Tower)[MAX_TOWERS], bool (&bTowerOnScreen)[MAX_TOWERS], int nTowerIdx, int nPosX, int nPosY);
 
 int main(int argc, char** argv)
 {
@@ -59,13 +60,8 @@ int main(int argc, char** argv)
 	bool bEnemyOnScreen[MAX_ENEMIES]{};
 	bool bBulletOnScreen[MAX_BULLETS]{};
 	int nTowerBusy[MAX_TOWERS]{};
-	
 
-
-	for (int i = 0; i < MAX_TOWERS; i++)
-	{
-		bTowerOnScreen[i] = true;
-	}
+	int nTowerIdx = 0;
 
 	Uint32 format;
 	int access;
@@ -134,6 +130,17 @@ int main(int argc, char** argv)
 			case SDLK_ESCAPE:
 				break;
 			}
+
+		/* Mouse event */
+		case SDL_MOUSEBUTTONDOWN:
+			switch (event.button.button)
+			{
+			case SDL_BUTTON_LEFT:
+				//printf("click mouse button : %d, %d\n", event.button.x, event.button.y);
+				nTowerIdx = GenTower(TowerRect, bTowerOnScreen, nTowerIdx, event.button.x, event.button.y);
+				break;
+			}
+			break;
 		}
 
 		// Update
@@ -317,4 +324,17 @@ float GetDistance(SDL_Rect* p1, SDL_Rect* p2)
 float GetDistance(int x, int y)
 {
 	return (float)sqrt(x * x + y * y);
+}
+
+int GenTower(SDL_Rect (& Tower)[MAX_TOWERS], bool (&bTowerOnScreen)[MAX_TOWERS], int nCurNumTowers, int nPosX, int nPosY)
+{
+	int nTowerIdx = nCurNumTowers % MAX_TOWERS;
+
+	bTowerOnScreen[nTowerIdx] = true;
+	Tower[nTowerIdx].x = nPosX;
+	Tower[nTowerIdx].y = nPosY;
+	printf("Tower number : %d\n", nTowerIdx);
+	nCurNumTowers++;
+
+	return nCurNumTowers;
 }
