@@ -2,14 +2,16 @@
 #include <SDL_image.h>
 #include <stdio.h>
 
+#define WINDOW_W 1460
+#define WINDOW_H 960
+
+bool collision(SDL_Rect A, SDL_Rect B);
+
 int main(int argc, char** argv)
 {
 	// INIT
-	int window_w = 1460;
-	int window_h = 960;
-
 	SDL_Init(SDL_INIT_EVERYTHING);
-	SDL_Window* window = SDL_CreateWindow("Defense Kingdom", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, window_w, window_h, false);
+	SDL_Window* window = SDL_CreateWindow("Defense Kingdom", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_W, WINDOW_H, false);
 	SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, 0);
 	if (renderer)
 	{
@@ -25,6 +27,7 @@ int main(int argc, char** argv)
 	// LOAD IMAGES AND DEFINE IMAGE RECT
 	SDL_Surface* tmpSurface;
 
+	// Tmp
 	tmpSurface = IMG_Load("assets/Blue.png");
 	SDL_Texture* TmpTex = SDL_CreateTextureFromSurface(renderer, tmpSurface);
 	SDL_FreeSurface(tmpSurface);
@@ -38,6 +41,21 @@ int main(int argc, char** argv)
 
 	short int TmpRect_XDir = 1;
 	short int TmpRect_YDir = 1;
+
+	// CTmp
+	tmpSurface = IMG_Load("assets/Red.png");
+	SDL_Texture* CTmpTex = SDL_CreateTextureFromSurface(renderer, tmpSurface);
+	SDL_FreeSurface(tmpSurface);
+
+	SDL_Rect CTmpRect{};
+	CTmpRect.w = 64;
+	CTmpRect.h = 64;
+	CTmpRect.x = WINDOW_W - CTmpRect.w;
+	CTmpRect.y = 0;
+	double CTmpRect_Speed = 0.1; // !!!!! SPEED_MIN = 1/frameDelay !!!!! //
+
+	short int CTmpRect_XDir = -1;
+	short int CTmpRect_YDir = 1;
 
 	// MAIN LOOP
 	bool isRunning = true;
@@ -60,12 +78,25 @@ int main(int argc, char** argv)
 		}
 
 		// update
-		TmpRect.x += (int)(TmpRect_Speed * frameDelay);
-		TmpRect.y += (int)(TmpRect_Speed * frameDelay);
+		TmpRect.x += TmpRect_XDir * (int)(TmpRect_Speed * frameDelay);
+		TmpRect.y += TmpRect_YDir * (int)(TmpRect_Speed * frameDelay);
+
+		CTmpRect.x += CTmpRect_XDir * (int)(CTmpRect_Speed * frameDelay);
+		CTmpRect.y += CTmpRect_YDir * (int)(CTmpRect_Speed * frameDelay);
+		
+		/*collision*/
+
+		if (collision(TmpRect, CTmpRect))
+		{
+			TmpRect_XDir *= -1;
+			CTmpRect_XDir *= -1;
+		}
+
 
 		// render
 		SDL_RenderClear(renderer);
 		SDL_RenderCopy(renderer, TmpTex, NULL, &TmpRect);
+		SDL_RenderCopy(renderer, CTmpTex, NULL, &CTmpRect);
 		SDL_RenderPresent(renderer);
 
 		// fps 2
@@ -81,4 +112,18 @@ int main(int argc, char** argv)
 	SDL_Quit();
 	
 	return 0;
+}
+
+bool collision(SDL_Rect A, SDL_Rect B)
+{
+	bool Cx = A.x + A.w >= B.x && A.x <= B.x + B.w;
+	bool Cy = A.y + A.h >= B.y && A.y <= B.y + B.h;
+	bool resault = false;
+
+	if (Cx && Cy)
+	{
+		resault = true;
+	}
+
+	return resault;
 }
