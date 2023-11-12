@@ -5,7 +5,21 @@
 #define WINDOW_W 1460
 #define WINDOW_H 960
 
+#define MONSTERLIMIT 50
+
 bool collision(SDL_Rect A, SDL_Rect B);
+typedef struct _Vector
+{
+	double x = 0;
+	double y = 0;
+} Vector;
+
+typedef struct _Monster
+{
+	SDL_Rect rect{};
+	Vector speed{};
+	bool OnScreen = false;
+} MONSTER;
 
 int main(int argc, char** argv)
 {
@@ -19,44 +33,34 @@ int main(int argc, char** argv)
 	}
 
 	// FPS SETTING
-	const int FPS = 100; // !!!!!FPS_MAX = 100!!!!! //
+	// !!!!!FPS_MAX = 100!!!!! //
+	const int FPS = 100;
 	const int frameDelay = 1000 / FPS;
 	Uint32 frameStart;
 	Uint32 frameTime;
 
 	// LOAD IMAGES AND DEFINE IMAGE RECT
+	// !!!!! SPEED_MIN = 1/frameDelay !!!!! //
 	SDL_Surface* tmpSurface;
 
-	// Tmp
+	// Monster
+	MONSTER* monster = (MONSTER*)malloc(sizeof(MONSTER) * MONSTERLIMIT);
 	tmpSurface = IMG_Load("assets/Blue.png");
-	SDL_Texture* TmpTex = SDL_CreateTextureFromSurface(renderer, tmpSurface);
+	SDL_Texture* MonsterTex = SDL_CreateTextureFromSurface(renderer, tmpSurface);
 	SDL_FreeSurface(tmpSurface);
-
-	SDL_Rect TmpRect{};
-	TmpRect.w = 64;
-	TmpRect.h = 64;
-	TmpRect.x = 0;
-	TmpRect.y = 0;
-	double TmpRect_Speed = 0.1; // !!!!! SPEED_MIN = 1/frameDelay !!!!! //
-
-	short int TmpRect_XDir = 1;
-	short int TmpRect_YDir = 1;
-
-	// CTmp
-	tmpSurface = IMG_Load("assets/Red.png");
-	SDL_Texture* CTmpTex = SDL_CreateTextureFromSurface(renderer, tmpSurface);
-	SDL_FreeSurface(tmpSurface);
-
-	SDL_Rect CTmpRect{};
-	CTmpRect.w = 64;
-	CTmpRect.h = 64;
-	CTmpRect.x = WINDOW_W - CTmpRect.w;
-	CTmpRect.y = 0;
-	double CTmpRect_Speed = 0.1; // !!!!! SPEED_MIN = 1/frameDelay !!!!! //
-
-	short int CTmpRect_XDir = -1;
-	short int CTmpRect_YDir = 1;
-
+	
+	if (monster != NULL)
+	{
+		for (int i = 0; i < MONSTERLIMIT; i++)
+		{
+			monster[i].rect.w = 64;
+			monster[i].rect.h = 64;
+			monster[i].rect.x = -i * 128;
+			monster[i].rect.y = WINDOW_H / 2 - monster[i].rect.h / 2;
+			monster[i].speed.x = 2;
+			monster[i].speed.y = 0;
+		}
+	}	
 	// MAIN LOOP
 	bool isRunning = true;
 	SDL_Event event;
@@ -78,25 +82,27 @@ int main(int argc, char** argv)
 		}
 
 		// update
-		TmpRect.x += TmpRect_XDir * (int)(TmpRect_Speed * frameDelay);
-		TmpRect.y += TmpRect_YDir * (int)(TmpRect_Speed * frameDelay);
-
-		CTmpRect.x += CTmpRect_XDir * (int)(CTmpRect_Speed * frameDelay);
-		CTmpRect.y += CTmpRect_YDir * (int)(CTmpRect_Speed * frameDelay);
 		
-		/*collision*/
-
-		if (collision(TmpRect, CTmpRect))
+		if (monster != NULL)
 		{
-			TmpRect_XDir *= -1;
-			CTmpRect_XDir *= -1;
+			for (int i = 0; i < MONSTERLIMIT; i++)
+			{
+				monster[i].rect.x += (int)monster[i].speed.x;
+				monster[i].rect.y += (int)monster[i].speed.y;
+			}
 		}
 
 
 		// render
 		SDL_RenderClear(renderer);
-		SDL_RenderCopy(renderer, TmpTex, NULL, &TmpRect);
-		SDL_RenderCopy(renderer, CTmpTex, NULL, &CTmpRect);
+		if (monster != NULL)
+		{
+			for (int i = 0; i < MONSTERLIMIT; i++)
+			{
+				SDL_RenderCopy(renderer, MonsterTex, NULL, &monster[i].rect);
+			}
+		}
+		//SDL_RenderCopy(renderer, CTmpTex, NULL, &CTmpRect);
 		SDL_RenderPresent(renderer);
 
 		// fps 2
@@ -106,7 +112,17 @@ int main(int argc, char** argv)
 			SDL_Delay(frameDelay - frameTime);
 		}
 	}
+	
+	// EXIT
 
+	// memory
+	if (monster != NULL)
+	{
+		free(monster);
+		monster = NULL;
+	}
+
+	// sdl
 	SDL_DestroyWindow(window);
 	SDL_DestroyRenderer(renderer);
 	SDL_Quit();
