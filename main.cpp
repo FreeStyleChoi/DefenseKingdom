@@ -3,8 +3,8 @@
 #include <stdio.h>
 #include <random>
 
-#define MAX_TOWERS 2
-#define MAX_ENEMIES 5
+#define MAX_TOWERS 10
+#define MAX_ENEMIES 50
 #define MAX_BULLETS 100
 
 bool CheckCollision(SDL_Rect* p1, SDL_Rect* p2);
@@ -82,6 +82,7 @@ int main(int argc, char** argv)
 	{
 		EnemyRect[i].w = w;
 		EnemyRect[i].h = h;
+		EnemyRect[i].y = rand() % (window_h-h);
 	}
 
 	SDL_QueryTexture(BulletTexture, &format, &access, &w, &h);
@@ -94,13 +95,15 @@ int main(int argc, char** argv)
 	// End of Rectangle
 
 	// dummy variables
-	int nSpeed = 20;
+	int nBulletSpeed = 10;
+	int nEnemySpeed = 5;
 	Uint32 nCountFrame = 0;
-	int nEnemyRate = 100;
+	int nEnemyRate = 50;
 	int nEnemyIdx = 0;
 	int nFireRate = 3;
+	int nTowerReload = 20;
 	int nBulletIdx = 0;
-	int nMaxRange = 300;
+	int nMaxRange = 200;
 
 	// Main Loop
 	while (isRunning)
@@ -158,8 +161,15 @@ int main(int argc, char** argv)
 		{
 			if (bEnemyOnScreen[i])
 			{
-				EnemyRect[i].x += 5;
-				EnemyRect[i].y = window_h / 2;
+				EnemyRect[i].x += nEnemySpeed;
+				//EnemyRect[i].y = window_h / 2;
+
+				// Remove an Enemy out of Screen
+				if (EnemyRect[i].x + EnemyRect[i].w < 0 || EnemyRect[i].x > window_w ||
+					EnemyRect[i].y + EnemyRect[i].h < 0 || EnemyRect[i].y > window_h)
+				{
+					bEnemyOnScreen[i] = false;
+				}
 			}
 		}
 
@@ -187,47 +197,50 @@ int main(int argc, char** argv)
 		for (int i = 0; i < MAX_TOWERS; i++)
 		{
 			// Reset a rest time of Tower
-			if (nTowerBusy[i] > 0)
+			if (bTowerOnScreen[i] && nTowerBusy[i] > 0)
 			{
 				nTowerBusy[i]--;
+				continue;
 			}
 
 			if (bTowerOnScreen[i] && nTowerBusy[i] == 0)
 			{
 				// find a Nearest Enemy
-				float fDistance1 = 2000.;
-				int nNearestEnemyIdx = 0;
+				float fDistancePre = (float)(window_w + window_h);
+				int nNearestEnemyIdx = -1;
 				for (int j = 0; j < MAX_ENEMIES; j++)
 				{
 					if (bEnemyOnScreen[j])
 					{
-						float fDistance2 = GetDistance(&TowerRect[i], &EnemyRect[j]);
-						if (fDistance2 > nMaxRange)
+						float fDistanceCurrent = GetDistance(&TowerRect[i], &EnemyRect[j]);
+						if (fDistanceCurrent < nMaxRange && fDistanceCurrent < fDistancePre)
 						{
-							continue;
-						}
-						if (fDistance1 > fDistance2)
-						{
-							// find empty magazine and fire bullet
-							for (int k = 0; k < MAX_BULLETS; k++)
-							{
-								if (bBulletOnScreen[k] == false)
-								{
-									nBulletIdx = k;
-									bBulletOnScreen[nBulletIdx] = true;
-									break;
-								}
-							}
-
-							fDistance1 = fDistance2;
+							fDistancePre = fDistanceCurrent;
 							nNearestEnemyIdx = j;
-							BulletDir[nBulletIdx].x = EnemyRect[j].x + EnemyRect[j].w / 2 - TowerRect[i].x - TowerRect[i].w / 2;
-							BulletDir[nBulletIdx].y = EnemyRect[j].y + EnemyRect[j].h / 2 - TowerRect[i].y - TowerRect[i].h / 2;
-							BulletRect[nBulletIdx].x = TowerRect[i].x + TowerRect[i].w / 2 - BulletRect[nBulletIdx].w / 2;
-							BulletRect[nBulletIdx].y = TowerRect[i].y + TowerRect[i].h / 2 - BulletRect[nBulletIdx].h / 2;
-							nTowerBusy[i] = nFireRate;
+							printf("Min Distance : %f\n", fDistancePre);
 						}
 					}
+				}
+
+				if (nNearestEnemyIdx != -1)
+				{
+					// find empty magazine and fire bullet
+					for (int k = 0; k < MAX_BULLETS; k++)
+					{
+						if (bBulletOnScreen[k] == false)
+						{
+							bBulletOnScreen[k] = true;
+							nBulletIdx = k;
+							break;
+						}
+					}
+					// Set Bullet Direction and Bullet Starting Position
+					BulletDir[nBulletIdx].x = EnemyRect[nNearestEnemyIdx].x + EnemyRect[nNearestEnemyIdx].w / 2 - TowerRect[i].x - TowerRect[i].w / 2;
+					BulletDir[nBulletIdx].y = EnemyRect[nNearestEnemyIdx].y + EnemyRect[nNearestEnemyIdx].h / 2 - TowerRect[i].y - TowerRect[i].h / 2;
+					BulletRect[nBulletIdx].x = TowerRect[i].x + TowerRect[i].w / 2 - BulletRect[nBulletIdx].w / 2;
+					BulletRect[nBulletIdx].y = TowerRect[i].y + TowerRect[i].h / 2 - BulletRect[nBulletIdx].h / 2;
+				
+					nTowerBusy[i] = nTowerReload;
 				}
 			}
 		}
@@ -238,8 +251,15 @@ int main(int argc, char** argv)
 			if (bBulletOnScreen[i])
 			{
 				float d = GetDistance(BulletDir[i].x, BulletDir[i].y);
-				BulletRect[i].x += (int)(nSpeed * BulletDir[i].x / d);
-				BulletRect[i].y += (int)(nSpeed * BulletDir[i].y / d);
+				BulletRect[i].x += (int)(nBulletSpeed * BulletDir[i].x / d);
+				BulletRect[i].y += (int)(nBulletSpeed * BulletDir[i].y / d);
+
+				// Remove a Bullet out of Screen
+				if (BulletRect[nBulletIdx].x + BulletRect[nBulletIdx].w < 0 || BulletRect[nBulletIdx].x > window_w ||
+					BulletRect[nBulletIdx].y + BulletRect[nBulletIdx].h < 0 || BulletRect[nBulletIdx].y > window_h)
+				{
+					bBulletOnScreen[nBulletIdx] = false;
+				}
 			}
 		}
 
@@ -301,7 +321,10 @@ int main(int argc, char** argv)
 
 bool CheckCollision(SDL_Rect* p1, SDL_Rect* p2)
 {
-	if (p1->x < p2->x && p1->x + p1->w > p2->x && p1->y < p2->y && p1->y + p1->h > p2->y)
+	if (p1->x < p2->x + p2->w && 
+		p1->x + p1->w > p2->x && 
+		p1->y < p2->y + p2->h && 
+		p1->y + p1->h > p2->y)
 	{
 		printf("collision\n");
 		return true;
@@ -318,7 +341,7 @@ float GetDistance(SDL_Rect* p1, SDL_Rect* p2)
 	float p1y = p1->y + p1->h / 2.f;
 	float p2x = p2->x + p2->w / 2.f;
 	float p2y = p2->y + p2->h / 2.f;
-	return sqrt((p2x - p1x) * (p2x - p1x) - (p2y - p1y) * (p2y - p1y));
+	return sqrt((p2x - p1x) * (p2x - p1x) + (p2y - p1y) * (p2y - p1y));
 }
 
 float GetDistance(int x, int y)
