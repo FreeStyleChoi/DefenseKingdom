@@ -19,7 +19,20 @@ typedef struct _Monster
 	SDL_Rect rect{};
 	Vector speed{};
 	bool OnScreen = false;
-} MONSTER;
+} Monster;
+
+typedef struct _Tower
+{
+	SDL_Rect rect = {};
+	bool OnScreen = false;
+}Tower;
+
+typedef struct _Bullet
+{
+	SDL_Rect rect = {};
+	Vector speed{};
+	bool Onscreen = false;
+}Bullst;
 
 int main(int argc, char** argv)
 {
@@ -43,8 +56,8 @@ int main(int argc, char** argv)
 	// !!!!! SPEED_MIN = 1/frameDelay !!!!! //
 	SDL_Surface* tmpSurface;
 
-	// Monster
-	MONSTER* monster = (MONSTER*)malloc(sizeof(MONSTER) * MONSTERLIMIT);
+	// MONSTER
+	Monster * monster  = (Monster*)malloc(sizeof(Monster) * MONSTERLIMIT);
 	tmpSurface = IMG_Load("assets/Blue.png");
 	SDL_Texture* MonsterTex = SDL_CreateTextureFromSurface(renderer, tmpSurface);
 	SDL_FreeSurface(tmpSurface);
