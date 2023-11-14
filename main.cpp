@@ -3,8 +3,8 @@
 #include <stdio.h>
 #include <random>
 
-#define MAX_TOWERS 10
-#define MAX_ENEMIES 50
+#define MAX_TOWERS 100
+#define MAX_ENEMIES 100
 #define MAX_BULLETS 100
 
 bool CheckCollision(SDL_Rect* p1, SDL_Rect* p2);
@@ -53,6 +53,7 @@ int main(int argc, char** argv)
 	SDL_Rect backgroundRect{0,0,window_w,window_h};
 	SDL_Rect TowerRect[MAX_TOWERS]{};
 	SDL_Rect EnemyRect[MAX_ENEMIES]{};
+	SDL_Point EnemyDir[MAX_ENEMIES]{};
 	SDL_Rect BulletRect[MAX_BULLETS]{};
 	SDL_Point BulletDir[MAX_BULLETS]{};
 
@@ -96,14 +97,21 @@ int main(int argc, char** argv)
 
 	// dummy variables
 	int nBulletSpeed = 10;
-	int nEnemySpeed = 5;
+	int nEnemySpeed = 10;
 	Uint32 nCountFrame = 0;
-	int nEnemyRate = 50;
+	int nEnemyRate = 10;
 	int nEnemyIdx = 0;
-	int nFireRate = 3;
+	//int nFireRate = 3;
 	int nTowerReload = 20;
 	int nBulletIdx = 0;
-	int nMaxRange = 200;
+	int nMaxRange = 400;
+	int numBullets = 0;
+
+	int key_dir_left = 0;
+	int key_dir_right = 0;
+	int key_dir_up = 0;
+	int key_dir_down = 0;
+
 
 	// Main Loop
 	while (isRunning)
@@ -126,13 +134,39 @@ int main(int argc, char** argv)
 			case SDLK_ESCAPE:
 				isRunning = false;
 				break;
+			case SDLK_LEFT:
+				key_dir_left = -1;
+				break;
+			case SDLK_RIGHT:
+				key_dir_right = 1;
+				break;
+			case SDLK_UP:
+				key_dir_up = -1;
+				break;
+			case SDLK_DOWN:
+				key_dir_down = 1;
+				break;
 			}
+			break;
 		case SDL_KEYUP:
 			switch (event.key.keysym.sym)
 			{
 			case SDLK_ESCAPE:
 				break;
+			case SDLK_LEFT:
+				key_dir_left = 0;
+				break;
+			case SDLK_RIGHT:
+				key_dir_right = 0;
+				break;
+			case SDLK_UP:
+				key_dir_up = 0;
+				break;
+			case SDLK_DOWN:
+				key_dir_down = 0;
+				break;
 			}
+			break;
 
 		/* Mouse event */
 		case SDL_MOUSEBUTTONDOWN:
@@ -145,6 +179,8 @@ int main(int argc, char** argv)
 			}
 			break;
 		}
+
+		//printf("l, r, u, d : %d, %d, %d, %d\n", key_dir_left, key_dir_right, key_dir_up, key_dir_down);
 
 		// Update
 		// appear an Enemy
@@ -159,7 +195,14 @@ int main(int argc, char** argv)
 		// Move Enemy
 		for (int i = 0; i < MAX_ENEMIES; i++)
 		{
-			if (bEnemyOnScreen[i])
+			if (bEnemyOnScreen[i] && MAX_TOWERS == 1 && bTowerOnScreen[0])
+			{
+				// get direction between Tower and Enemy
+				// get distance 
+				// update Enemy position
+
+			}
+			else if (bEnemyOnScreen[i])
 			{
 				EnemyRect[i].x += nEnemySpeed;
 				//EnemyRect[i].y = window_h / 2;
@@ -171,6 +214,13 @@ int main(int argc, char** argv)
 					bEnemyOnScreen[i] = false;
 				}
 			}
+		}
+
+		// A Tower control by keyboard
+		if (MAX_TOWERS == 1 && bTowerOnScreen[0])
+		{
+			TowerRect[0].x += (key_dir_left + key_dir_right) * 3;
+			TowerRect[0].y += (key_dir_up + key_dir_down) * 3;
 		}
 
 		// Check collision between Enemy and bullet
@@ -186,6 +236,7 @@ int main(int argc, char** argv)
 						{
 							bEnemyOnScreen[i] = false;
 							bBulletOnScreen[j] = false;
+							numBullets--;
 							break;
 						}
 					}
@@ -217,7 +268,7 @@ int main(int argc, char** argv)
 						{
 							fDistancePre = fDistanceCurrent;
 							nNearestEnemyIdx = j;
-							printf("Min Distance : %f\n", fDistancePre);
+							//printf("Min Distance : %f\n", fDistancePre);
 						}
 					}
 				}
@@ -231,6 +282,7 @@ int main(int argc, char** argv)
 						{
 							bBulletOnScreen[k] = true;
 							nBulletIdx = k;
+							numBullets++;
 							break;
 						}
 					}
@@ -255,14 +307,16 @@ int main(int argc, char** argv)
 				BulletRect[i].y += (int)(nBulletSpeed * BulletDir[i].y / d);
 
 				// Remove a Bullet out of Screen
-				if (BulletRect[nBulletIdx].x + BulletRect[nBulletIdx].w < 0 || BulletRect[nBulletIdx].x > window_w ||
-					BulletRect[nBulletIdx].y + BulletRect[nBulletIdx].h < 0 || BulletRect[nBulletIdx].y > window_h)
+				if (BulletRect[i].x + BulletRect[i].w < 0 || BulletRect[i].x > window_w ||
+					BulletRect[i].y + BulletRect[i].h < 0 || BulletRect[i].y > window_h)
 				{
-					bBulletOnScreen[nBulletIdx] = false;
+					bBulletOnScreen[i] = false;
+					numBullets--;
 				}
 			}
 		}
-
+		//printf("numBullet : %d\n", numBullets);
+		
 
 		// Render
 		SDL_RenderClear(renderer);
@@ -326,7 +380,7 @@ bool CheckCollision(SDL_Rect* p1, SDL_Rect* p2)
 		p1->y < p2->y + p2->h && 
 		p1->y + p1->h > p2->y)
 	{
-		printf("collision\n");
+		//printf("collision\n");
 		return true;
 	}
 	else
@@ -356,7 +410,7 @@ int GenTower(SDL_Rect (& Tower)[MAX_TOWERS], bool (&bTowerOnScreen)[MAX_TOWERS],
 	bTowerOnScreen[nTowerIdx] = true;
 	Tower[nTowerIdx].x = nPosX;
 	Tower[nTowerIdx].y = nPosY;
-	printf("Tower number : %d\n", nTowerIdx);
+	//printf("Tower number : %d\n", nTowerIdx);
 	nCurNumTowers++;
 
 	return nCurNumTowers;
