@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <random>
 
-#define MAX_TOWERS 100
+#define MAX_TOWERS 1
 #define MAX_ENEMIES 100
 #define MAX_BULLETS 100
 
@@ -97,12 +97,13 @@ int main(int argc, char** argv)
 
 	// dummy variables
 	int nBulletSpeed = 10;
-	int nEnemySpeed = 10;
+	int nEnemySpeed = 3;
+	int nTowerSpeed = 5;
 	Uint32 nCountFrame = 0;
-	int nEnemyRate = 10;
+	int nEnemyRate = 20;
 	int nEnemyIdx = 0;
 	//int nFireRate = 3;
-	int nTowerReload = 20;
+	int nTowerReload = 100;
 	int nBulletIdx = 0;
 	int nMaxRange = 400;
 	int numBullets = 0;
@@ -198,9 +199,14 @@ int main(int argc, char** argv)
 			if (bEnemyOnScreen[i] && MAX_TOWERS == 1 && bTowerOnScreen[0])
 			{
 				// get direction between Tower and Enemy
-				// get distance 
-				// update Enemy position
-
+				EnemyDir[i].x = TowerRect[0].x + TowerRect[0].w / 2 - EnemyRect[i].x - EnemyRect[i].w / 2;
+				EnemyDir[i].y = TowerRect[0].y + TowerRect[0].h / 2 - EnemyRect[i].y - EnemyRect[i].h / 2;
+				float d = GetDistance(EnemyDir[i].x, EnemyDir[i].y);
+				if (d > 0.001)
+				{
+					EnemyRect[i].x += (int)(nEnemySpeed * EnemyDir[i].x / d);
+					EnemyRect[i].y += (int)(nEnemySpeed * EnemyDir[i].y / d);
+				}
 			}
 			else if (bEnemyOnScreen[i])
 			{
@@ -219,8 +225,12 @@ int main(int argc, char** argv)
 		// A Tower control by keyboard
 		if (MAX_TOWERS == 1 && bTowerOnScreen[0])
 		{
-			TowerRect[0].x += (key_dir_left + key_dir_right) * 3;
-			TowerRect[0].y += (key_dir_up + key_dir_down) * 3;
+			float d = GetDistance(key_dir_left + key_dir_right, key_dir_up + key_dir_down);
+			if (d > 0.001)
+			{
+				TowerRect[0].x += (int)(nTowerSpeed * (key_dir_left + key_dir_right) / d);
+				TowerRect[0].y += (int)(nTowerSpeed * (key_dir_up + key_dir_down) / d);
+			}
 		}
 
 		// Check collision between Enemy and bullet
@@ -303,9 +313,11 @@ int main(int argc, char** argv)
 			if (bBulletOnScreen[i])
 			{
 				float d = GetDistance(BulletDir[i].x, BulletDir[i].y);
-				BulletRect[i].x += (int)(nBulletSpeed * BulletDir[i].x / d);
-				BulletRect[i].y += (int)(nBulletSpeed * BulletDir[i].y / d);
-
+				if (d > 0.001)
+				{
+					BulletRect[i].x += (int)(nBulletSpeed * BulletDir[i].x / d);
+					BulletRect[i].y += (int)(nBulletSpeed * BulletDir[i].y / d);
+				}
 				// Remove a Bullet out of Screen
 				if (BulletRect[i].x + BulletRect[i].w < 0 || BulletRect[i].x > window_w ||
 					BulletRect[i].y + BulletRect[i].h < 0 || BulletRect[i].y > window_h)
