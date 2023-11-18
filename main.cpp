@@ -1,9 +1,25 @@
 #include <SDL.h>
 #include <SDL_image.h>
 #include <stdio.h>
+#include <string.h>
 
-#define WINDOW_W 1460
-#define WINDOW_H 960
+#define WINDOW_W 800
+#define WINDOW_H 600
+
+#define OBJECT_LIMIT 30000
+
+typedef struct _Vector
+{
+	double x = 0;
+	double y = 0;
+} Vector;
+
+typedef struct _Monster
+{
+	SDL_Rect rect{};
+	Vector speed{};
+	bool OnScreen = false;
+} Monster;
 
 bool collision(SDL_Rect A, SDL_Rect B);
 
@@ -57,6 +73,11 @@ int main(int argc, char** argv)
 	short int CTmpRect_XDir = -1;
 	short int CTmpRect_YDir = 1;
 
+
+	// Test Dynamic Memory Allocation for Objects
+	Monster* monster;
+
+
 	// MAIN LOOP
 	bool isRunning = true;
 	SDL_Event event;
@@ -75,6 +96,25 @@ int main(int argc, char** argv)
 			break;
 		default:
 			break;
+		}
+		
+		// Test a Dynamic Memory Allocation
+		for (int i = 0; i < OBJECT_LIMIT; i++)
+		{
+			monster = (Monster*)malloc(sizeof(Monster));
+			if (monster != NULL)
+			{
+				memset(monster, 0, sizeof(Monster));
+			}
+		}
+
+		for (int i = 0; i < OBJECT_LIMIT; i++)
+		{
+			if (monster != NULL)
+			{
+				free(monster);
+			}
+			monster = NULL;
 		}
 
 		// update
@@ -104,6 +144,10 @@ int main(int argc, char** argv)
 		if (frameDelay > frameTime)
 		{
 			SDL_Delay(frameDelay - frameTime);
+		}
+		else
+		{
+			printf("frame drop~!!\n");
 		}
 	}
 
